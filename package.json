@@ -5,22 +5,32 @@
 	"private": true,
 	"scripts": {
 		"dev:server": "bun run --hot src/server/index.ts",
-		"dev:ui": "vite",
+		"dev:ui": "CHROME_PATH=$(find /home/codespace/.cache/ms-playwright -name chrome -type f | head -n 1) vite",
 		"dev": "bun run dev:server & bun run dev:ui",
-		"build": "vite build",
-		"preview": "vite preview",
+		"build:ui": "CHROME_PATH=$(find /home/codespace/.cache/ms-playwright -name chrome -type f | head -n 1) vite build",
+		"build:server": "bun build ./src/server/index.ts --compile --outfile server-bin",
+		"build": "bun run build:ui && bun run build:server",
+		"preview:server": "NODE_ENV=production ./server-bin",
+		"preview:ui": "vite preview",
+		"preview": "bun run preview:server & bun run preview:ui",
 		"db:push": "bunx drizzle-kit push",
 		"db:studio": "bunx drizzle-kit studio",
-		"lint": "biome check .",
-		"lint:fix": "biome check --write ."
+		"lint:fix": "biome check --write .",
+		"test": "vitest run",
+		"test:e2e": "playwright test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.13",
+		"@playwright/test": "^1.58.1",
 		"@types/bun": "latest",
+		"@types/node": "^25.2.0",
 		"@types/react": "^19.2.10",
 		"@types/react-dom": "^19.2.3",
+		"@vitest/ui": "^4.0.18",
 		"autoprefixer": "^10.4.24",
-		"drizzle-kit": "^0.31.8"
+		"drizzle-kit": "^0.31.8",
+		"playwright": "^1.58.1",
+		"vitest": "^4.0.18"
 	},
 	"peerDependencies": {
 		"typescript": "^5.9.3"

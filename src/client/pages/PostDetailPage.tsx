@@ -7,7 +7,7 @@ export const PostDetailPage = () => {
 	const { data: post, isLoading } = useQuery({
 		queryKey: ["post", postId],
 		queryFn: async () => {
-			const res = await api.api.posts[":id"].$get({ param: { id: postId } });
+			const res = await api.posts[":id"].$get({ param: { id: postId } });
 			if (!res.ok) return null;
 			return res.json();
 		},

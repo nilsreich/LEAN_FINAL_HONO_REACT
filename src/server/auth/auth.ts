@@ -14,8 +14,20 @@ export const auth = betterAuth({
 	// In Codespaces, Better-Auth needs to know its public URL
 	// If you see 500 errors, make sure BETTER_AUTH_URL is set in .env
 	baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-	trustedOrigins: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+	trustedOrigins: [
+		"http://localhost:5173",
+		"http://localhost:5174",
+		"http://localhost:5175",
+		"http://localhost:3000",
+		"http://localhost:4173",
+		"http://localhost:4174",
+		"http://localhost:4175",
+	],
 	emailAndPassword: {
 		enabled: true,
+	},
+	session: {
+		expiresIn: 60 * 60 * 24 * 7, // 7 days
+		updateAge: 60 * 60 * 24, // 1 day
 	},
 });

@@ -5,6 +5,7 @@ import {
 	Outlet,
 	RouterProvider,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { authClient } from "./auth/auth-client";
 import "./global.css";
 import { Navbar } from "./components/layout/Navbar";
@@ -71,7 +72,15 @@ declare module "@tanstack/react-router" {
 function App() {
 	const { isPending } = authClient.useSession();
 
-	if (isPending) return null; // Splash screen handles initial load
+	// Remove splash screen only when auth is settled
+	useEffect(() => {
+		if (!isPending) {
+			// @ts-expect-error
+			window.removeSplash?.();
+		}
+	}, [isPending]);
+
+	if (isPending) return null;
 
 	return <RouterProvider router={router} />;
 }

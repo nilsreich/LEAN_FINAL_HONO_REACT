@@ -1,18 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { api } from "../lib/api";
 
 export const HomePage = () => {
-	const { data, isLoading } = useQuery({
+	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
 		queryKey: ["posts"],
-		queryFn: async () => {
-			const res = await api.api.posts.$get();
+		queryFn: async ({ pageParam = 0 }) => {
+			const res = await api.posts.$get({
+				query: {
+					limit: "5",
+					offset: pageParam.toString(),
+				},
+			});
 			if (!res.ok) throw new Error("Failed to fetch posts");
 			return res.json();
 		},
+		getNextPageParam: (lastPage) => {
+			const nextOffset = lastPage.offset + lastPage.posts.length;
+			return nextOffset < lastPage.total ? nextOffset : undefined;
+		},
+		initialPageParam: 0,
 	});
 
-	const posts = data?.posts;
+	const posts = data?.pages.flatMap((page) => page.posts) ?? [];
+	const total = data?.pages[0]?.total ?? 0;
 
 	return (
 		<div className="flex flex-col gap-8 pb-10">
@@ -21,8 +32,7 @@ export const HomePage = () => {
 					<div className="max-w-md">
 						<h1 className="text-4xl font-black">Welcome to PostApp</h1>
 						<p className="py-4 opacity-70">
-							A minimal place to share your thoughts. Join {data?.total ?? 0} others sharing their
-							stories.
+							A minimal place to share your thoughts. Join {total} others sharing their stories.
 						</p>
 						<Link to="/create" className="btn btn-primary rounded-xl">
 							Start Writing
@@ -34,7 +44,7 @@ export const HomePage = () => {
 			<section>
 				<div className="flex justify-between items-end mb-6">
 					<h3 className="text-2xl font-black">Featured Posts</h3>
-					<span className="badge badge-outline opacity-50">{data?.total ?? 0} total</span>
+					<span className="badge badge-outline opacity-50">{total} total</span>
 				</div>
 
 				{isLoading ? (
@@ -43,7 +53,7 @@ export const HomePage = () => {
 					</div>
 				) : (
 					<div className="grid gap-4">
-						{posts?.map((p: any) => (
+						{posts.map((p: any) => (
 							<Link
 								key={p.id}
 								to="/posts/$postId"
@@ -63,9 +73,26 @@ export const HomePage = () => {
 								</div>
 							</Link>
 						))}
-						{posts?.length === 0 && (
+
+						{posts.length === 0 && (
 							<div className="alert bg-base-200 border-none justify-center py-10 italic opacity-50">
 								No posts yet. Be the first!
+							</div>
+						)}
+
+						{hasNextPage && (
+							<div className="flex justify-center mt-6">
+								<button
+									onClick={() => fetchNextPage()}
+									disabled={isFetchingNextPage}
+									className="btn btn-ghost btn-sm opacity-70 hover:opacity-100"
+								>
+									{isFetchingNextPage ? (
+										<span className="loading loading-spinner loading-xs"></span>
+									) : (
+										"Load more posts"
+									)}
+								</button>
 							</div>
 						)}
 					</div>

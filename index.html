@@ -18,7 +18,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f9fafb;
+        background: #020509;
         z-index: 9999;
         transition: opacity 0.4s ease-out;
       }
@@ -40,13 +40,14 @@
     <div id="root"></div>
     <script type="module" src="/src/client/main.tsx"></script>
     <script>
-      // Remove splash once React is hydrated (or starts loading)
-      window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          const s = document.getElementById('splash');
-          if (s) { s.style.opacity = '0'; setTimeout(() => s.remove(), 400); }
-        }, 500);
-      });
+      // Global function to remove splash
+      window.removeSplash = () => {
+        const s = document.getElementById('splash');
+        if (s) {
+          s.style.opacity = '0';
+          setTimeout(() => s.remove(), 400);
+        }
+      };
     </script>
   </body>
 </html>

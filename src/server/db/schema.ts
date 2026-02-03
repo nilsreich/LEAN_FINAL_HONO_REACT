@@ -27,7 +27,7 @@ export const session = sqliteTable("session", {
 	userAgent: text("userAgent"),
 	userId: text("userId")
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: "cascade" }),
 });
 
 /**
@@ -39,7 +39,7 @@ export const account = sqliteTable("account", {
 	providerId: text("providerId").notNull(),
 	userId: text("userId")
 		.notNull()
-		.references(() => user.id),
+		.references(() => user.id, { onDelete: "cascade" }),
 	password: text("password"),
 	createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
 	updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
@@ -63,14 +63,20 @@ export const verification = sqliteTable("verification", {
 export const post = sqliteTable(
 	"post",
 	{
-		id: text("id").primaryKey(),
+		id: text("id")
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
 		title: text("title").notNull(),
 		content: text("content").notNull(),
 		userId: text("userId")
 			.notNull()
-			.references(() => user.id),
-		createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
-		updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt: integer("createdAt", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+		updatedAt: integer("updatedAt", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
 	},
 	(table) => ({
 		userIdIdx: index("post_userId_idx").on(table.userId),

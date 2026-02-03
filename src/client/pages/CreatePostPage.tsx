@@ -14,7 +14,7 @@ export const CreatePostPage = () => {
 
 	const createMutation = useMutation({
 		mutationFn: async (params: { title: string; content: string }) => {
-			const res = await api.api.posts.$post({ json: params });
+			const res = await api.posts.$post({ json: params });
 			if (!res.ok) throw new Error("Failed to create post");
 			return res.json();
 		},
