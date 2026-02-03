@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light, dark; 
+}
+
+@theme {
+  --color-brand: #7480ff;
+}
+
+:root {
+  --splash-bg: #1d232a; 
+}
+
+body {
+  @apply bg-base-200 min-h-screen text-base-content antialiased;
+}
+
+.btn, .input, .textarea, .card {
+  @apply transition-all duration-200;
+}

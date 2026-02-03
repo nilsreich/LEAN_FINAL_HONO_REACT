@@ -1,0 +1,7 @@
+dist
+node_modules
+drizzle
+**/*.css
+public
+.env
+bun.lock
