@@ -1,38 +1,37 @@
-import { describe, expect, it, vi } from "vitest";
-import { createPostSchema, paginationSchema } from "../shared/schemas";
-import { apiV1 } from "./v1";
+import { describe, expect, it, mock } from "bun:test";
 
-// Mock the DB and Auth dependencies
-vi.mock("./db", () => {
+mock.module("./db", () => {
 	const mockDb = {
-		batch: vi.fn(),
-		select: vi.fn(() => ({
-			from: vi.fn(() => ({
-				orderBy: vi.fn(() => ({
-					limit: vi.fn(() => ({
-						offset: vi.fn(),
+		batch: mock(),
+		select: mock(() => ({
+			from: mock(() => ({
+				orderBy: mock(() => ({
+					limit: mock(() => ({
+						offset: mock(),
 					})),
 				})),
-				where: vi.fn(() => ({
-					limit: vi.fn(),
+				where: mock(() => ({
+					limit: mock(),
 				})),
 			})),
 		})),
-		insert: vi.fn(() => ({
-			values: vi.fn(() => ({
-				returning: vi.fn(),
+		insert: mock(() => ({
+			values: mock(() => ({
+				returning: mock(),
 			})),
 		})),
-		delete: vi.fn(() => ({
-			where: vi.fn(),
+		delete: mock(() => ({
+			where: mock(),
 		})),
 	};
 	return { db: mockDb };
 });
 
-vi.mock("./auth/auth", () => ({
+mock.module("./auth/auth", () => ({
 	auth: {
-		handler: vi.fn(),
+		api: {
+			getSession: mock(async () => ({ user: { id: "test-user" }, session: {} })),
+		},
 		$Infer: {
 			Session: {
 				user: {} as any,
@@ -42,12 +41,15 @@ vi.mock("./auth/auth", () => ({
 	},
 }));
 
-vi.mock("./auth/middleware", () => ({
+mock.module("./auth/middleware", () => ({
 	authGuard: async (c: any, next: any) => {
 		c.set("user", { id: "test-user" });
 		await next();
 	},
 }));
+
+import { createPostSchema, paginationSchema } from "../shared/schemas";
+import { apiV1 } from "./v1";
 
 describe("API v1 Unit Tests", () => {
 	it("Pagination schema should validate correct input", () => {
@@ -66,7 +68,7 @@ describe("API v1 Unit Tests", () => {
 
 	it("Post creation schema should validate correctly", () => {
 		const valid = { title: "Test Title", content: "Test Content" };
-		const result = createPostSchema.safeParse(valid);
+		const result = createPostSchema().safeParse(valid);
 		expect(result.success).toBe(true);
 	});
 
@@ -81,12 +83,10 @@ describe("API v1 Unit Tests", () => {
 	it("POST /posts should return 201 (Unit Test with Mock)", async () => {
 		const { db } = await import("./db");
 		(db.insert as any).mockReturnValueOnce({
-			values: vi.fn().mockReturnValueOnce({
-				returning: vi
-					.fn()
-					.mockResolvedValueOnce([
-						{ id: "1", title: "Test", content: "Test", userId: "test-user" },
-					]),
+			values: mock().mockReturnValueOnce({
+				returning: mock().mockResolvedValueOnce([
+					{ id: "1", title: "Test", content: "Test", userId: "test-user" },
+				]),
 			}),
 		});
 

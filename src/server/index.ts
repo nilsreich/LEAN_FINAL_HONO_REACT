@@ -4,10 +4,16 @@ import { compress } from "hono/compress";
 import { cors } from "hono/cors";
 import { csrf } from "hono/csrf";
 import { secureHeaders } from "hono/secure-headers";
+import { initAcceptLanguageHeaderDetector } from "typesafe-i18n/detectors";
+import { detectLocale, i18nObject } from "../i18n/i18n-util";
+import { loadAllLocales } from "../i18n/i18n-util.sync";
 import { auth } from "./auth/auth";
 import { Logger } from "./lib/logger";
 import type { Variables } from "./types";
 import { apiV1 } from "./v1";
+
+// Load all locales once at startup
+loadAllLocales();
 
 /**
  * HONO SERVER CONFIGURATION
@@ -16,6 +22,19 @@ const app = new Hono<{ Variables: Variables }>();
 
 // --- COMPRESSION ---
 app.use("*", compress());
+
+// --- i18n MIDDLEWARE ---
+app.use("*", async (c, next) => {
+	const acceptLanguageHeader = c.req.header("Accept-Language") || "en";
+	const detector = initAcceptLanguageHeaderDetector({
+		headers: {
+			get: (key: string) => (key.toLowerCase() === "accept-language" ? acceptLanguageHeader : null),
+		},
+	});
+	const locale = detectLocale(detector);
+	c.set("LL", i18nObject(locale));
+	await next();
+});
 
 // Diagnostic checks
 if (!process.env.BETTER_AUTH_SECRET) {
@@ -124,7 +143,11 @@ app.use(
 			const isAllowedLocal =
 				origin && allowedLocalPorts.some((port) => origin === `http://localhost:${port}`);
 
-			if (isAllowedLocal || origin === process.env.PRODUCTION_URL || origin?.endsWith(".app.github.dev")) {
+			if (
+				isAllowedLocal ||
+				origin === process.env.PRODUCTION_URL ||
+				origin?.endsWith(".app.github.dev")
+			) {
 				return origin;
 			}
 			return "http://localhost:5173"; // Default for development

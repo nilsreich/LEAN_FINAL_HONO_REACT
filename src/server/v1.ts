@@ -28,26 +28,37 @@ export const apiV1 = new Hono<{ Variables: Variables }>()
 	})
 	.get("/posts/:id", async (c) => {
 		const id = c.req.param("id");
+		const LL = c.get("LL");
 		const [targetPost] = await db.batch([db.select().from(post).where(eq(post.id, id)).limit(1)]);
 
-		if (targetPost.length === 0) return c.json({ error: "Post not found" }, 404);
+		if (targetPost.length === 0) return c.json({ error: LL.ERROR_POST_NOT_FOUND() }, 404);
 		return c.json(targetPost[0]);
 	})
-	.post("/posts", authGuard, zValidator("json", createPostSchema), async (c) => {
-		const { title, content } = c.req.valid("json");
-		const currentUser = c.get("user");
+	.post(
+		"/posts",
+		authGuard,
+		// Using any to bypass complex Hono type inference while maintaining runtime localization
+		(c, next) => zValidator("json", createPostSchema(c.get("LL")))(c as any, next),
+		async (c) => {
+			// type-cast back to the expected type for internal usage
+			const { title, content } = (c.req as any).valid("json");
+			const currentUser = c.get("user");
+			const LL = c.get("LL");
 
-		const [newPost] = await db
-			.insert(post)
-			.values({
-				title,
-				content,
-				userId: currentUser.id,
-			})
-			.returning();
+			if (!currentUser) return c.json({ error: LL.ERROR_UNAUTHORIZED() }, 401);
 
-		return c.json(newPost, 201);
-	})
+			const [newPost] = await db
+				.insert(post)
+				.values({
+					title,
+					content,
+					userId: currentUser.id,
+				})
+				.returning();
+
+			return c.json(newPost, 201);
+		},
+	)
 	.get("/protected", authGuard, async (c) => {
 		const user = c.get("user");
 		return c.json({

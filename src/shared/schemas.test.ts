@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { createPostSchema, paginationSchema } from "../shared/schemas";
 
 describe("Post Schema Tests", () => {
 	it("should validate a valid post", () => {
-		const res = createPostSchema.safeParse({
+		const res = createPostSchema().safeParse({
 			title: "My first post",
 			content: "This is a great content",
 		});
@@ -11,14 +11,14 @@ describe("Post Schema Tests", () => {
 	});
 
 	it("should fail if title is missing", () => {
-		const res = createPostSchema.safeParse({
+		const res = createPostSchema().safeParse({
 			content: "Missing title",
 		});
 		expect(res.success).toBe(false);
 	});
 
 	it("should fail if title is too long", () => {
-		const res = createPostSchema.safeParse({
+		const res = createPostSchema().safeParse({
 			title: "A".repeat(101),
 			content: "Valid content",
 		});

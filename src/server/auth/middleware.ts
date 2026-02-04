@@ -18,7 +18,8 @@ export const authGuard = async (c: Context<{ Variables: Variables }>, next: Next
 	});
 
 	if (!session) {
-		return c.json({ error: "Unauthorized" }, 401);
+		const LL = (c as any).get("LL");
+		return c.json({ error: LL ? LL.ERROR_UNAUTHORIZED() : "Unauthorized" }, 401);
 	}
 
 	c.set("user", session.user);

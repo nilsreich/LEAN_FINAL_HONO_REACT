@@ -1,6 +1,7 @@
 dist
 node_modules
 drizzle
+src/i18n
 **/*.css
 public
 .env
