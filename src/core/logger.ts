@@ -98,21 +98,22 @@ export const logEvent = async (c: Context, eventName: string, extra?: object) =>
  * Global Middleware for basic system request logging
  */
 export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
-	const start = Date.now();
+	const start = performance.now();
 
 	// Background analytics logging
-	if (!c.req.path.startsWith("/admin")) {
+	if (!c.req.path.startsWith("/admin") && !c.req.path.startsWith("/api/auth")) {
 		logEvent(c, "page_view").catch(() => {});
 	}
 
 	await next();
-	const ms = Date.now() - start;
+	const duration = Math.round(performance.now() - start);
 
-	systemLogger.info({
-		method: c.req.method,
+	// Log HTTP metrics directly to analytics.log for a single-file source of truth
+	analyticsLogger.info({
+		event: "http_request",
 		path: c.req.path,
 		status: c.res.status,
-		duration: `${ms}ms`,
+		duration: duration,
 	});
 };
 

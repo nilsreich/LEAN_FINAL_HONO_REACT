@@ -59,11 +59,17 @@ const isTechNoise = (path?: string) => {
 
 async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics | null> {
 	try {
-		const file = Bun.file("./analytics.log");
+		const logPath = "./analytics.log";
+		const file = Bun.file(logPath);
 		if (!(await file.exists())) return null;
 
-		const text = await file.text();
+		// Use a slice of the last 4MB for memory efficiency on low-performance VPS
+		const fileSize = file.size;
+		const startByte = Math.max(0, fileSize - 4 * 1024 * 1024);
+		const blob = file.slice(startByte, fileSize);
+		const text = await blob.text();
 		const lines = text.trim().split("\n");
+		
 		const allEntries: PinoLogEntry[] = lines
 			.map((line) => {
 				try {
@@ -74,8 +80,40 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 			})
 			.filter((e): e is PinoLogEntry => e !== null);
 
-		// Exclude system stats from user analytics
-		const userEntries = allEntries.filter((e) => e.event !== "system_stats");
+		// Infrastructure metrics derived from http_request events in the same log
+		let totalLat = 0;
+		let errors = 0;
+		let totalRequests = 0;
+		const codes: Record<number, number> = {};
+		const pathLatencies: Record<string, { total: number; count: number }> = {};
+
+		// Exclude system stats and internal requests from core user analytics
+		const userEntries: PinoLogEntry[] = [];
+		
+		for (const entry of allEntries) {
+			if (entry.event === "system_stats") continue;
+			
+			if (entry.event === "http_request") {
+				const lat = Number(entry.duration) || 0;
+				const status = Number(entry.status) || 0;
+				const path = String(entry.path || "unknown");
+
+				totalLat += lat;
+				totalRequests++;
+				if (status >= 400) errors++;
+				codes[status] = (codes[status] || 0) + 1;
+
+				if (!isTechNoise(path)) {
+					pathLatencies[path] = pathLatencies[path] || { total: 0, count: 0 };
+					const stats = pathLatencies[path]!;
+					stats.total += lat;
+					stats.count++;
+				}
+				continue;
+			}
+			
+			userEntries.push(entry);
+		}
 
 		// Filter noise for core metrics
 		const entries = hideNoise ? userEntries.filter((e) => !isTechNoise(e.path)) : userEntries;
@@ -171,51 +209,20 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 		const bounceRate =
 			totalSessions > 0 ? Math.round((singleEventSessions / totalSessions) * 100) : 0;
 
-		// --- SYSTEM HEALTH (from system.log) ---
-		const systemFile = Bun.file("./system.log");
+		// --- SYSTEM HEALTH (now from unified analytics.log) ---
 		let systemHealth: AnalyticsMetrics["systemHealth"];
-		if (await systemFile.exists()) {
-			const sysText = await systemFile.text();
-			const sysLines = sysText.trim().split("\n");
-			let totalLat = 0;
-			let errors = 0;
-			let totalRequests = 0;
-			const codes: Record<number, number> = {};
-			const pathLatencies: Record<string, { total: number; count: number }> = {};
-
-			for (const line of sysLines) {
-				try {
-					const entry = JSON.parse(line);
-					if (entry.duration && entry.status) {
-						const lat = Number.parseInt(entry.duration, 10) || 0;
-						totalLat += lat;
-						totalRequests++;
-						if (entry.status >= 400) errors++;
-						codes[entry.status] = (codes[entry.status] || 0) + 1;
-
-						pathLatencies[entry.path] = pathLatencies[entry.path] || { total: 0, count: 0 };
-						const stats = pathLatencies[entry.path]!;
-						stats.total += lat;
-						stats.count++;
-					}
-				} catch (_) {
-					// Skip malformed lines
-				}
-			}
-
-			if (totalRequests > 0) {
-				systemHealth = {
-					avgLatency: Math.round(totalLat / totalRequests),
-					errorRate: Math.round((errors / totalRequests) * 100),
-					successRate: Math.round(((totalRequests - errors) / totalRequests) * 100),
-					statusCodes: codes,
-					slowestPaths: Object.entries(pathLatencies)
-						.map(([path, data]) => ({ path, avg: Math.round(data.total / data.count) }))
-						.sort((a, b) => b.avg - a.avg)
-						.filter((p) => !isTechNoise(p.path))
-						.slice(0, 3),
-				};
-			}
+		if (totalRequests > 0) {
+			systemHealth = {
+				avgLatency: Math.round(totalLat / totalRequests),
+				errorRate: Math.round((errors / totalRequests) * 100),
+				successRate: Math.round(((totalRequests - errors) / totalRequests) * 100),
+				statusCodes: codes,
+				slowestPaths: Object.entries(pathLatencies)
+					.map(([path, data]) => ({ path, avg: Math.round(data.total / data.count) }))
+					.sort((a, b) => b.avg - a.avg)
+					.filter((p) => !isTechNoise(p.path))
+					.slice(0, 3),
+			};
 		}
 
 		return {
