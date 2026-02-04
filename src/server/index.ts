@@ -125,7 +125,9 @@ app.get("*", async (c) => {
 
 export type AppType = typeof apiRoutes;
 
+const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+
 export default {
-	port: 3000,
-	fetch: app.fetch,
+    port: port,
+    fetch: app.fetch,
 };
