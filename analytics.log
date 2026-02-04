@@ -130,3 +130,11 @@
 {"level":30,"time":"2026-02-04T22:53:41.677Z","event":"page_view","path":"/favicon.ico","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
 {"level":30,"time":"2026-02-04T22:53:45.378Z","event":"page_view","path":"/sw.js","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
 {"level":30,"time":"2026-02-04T22:53:45.537Z","event":"page_view","path":"/workbox-3e722498.js","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T22:59:50.194Z","event":"page_view","path":"/api/auth/get-session","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T22:59:50.356Z","event":"page_view","path":"/api/posts","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T22:59:54.920Z","event":"page_view","path":"/api/auth/get-session","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T22:59:55.130Z","event":"page_view","path":"/api/posts","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T22:59:56.602Z","event":"page_view","path":"/sw.js","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T22:59:56.731Z","event":"page_view","path":"/workbox-3e722498.js","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T23:00:00.832Z","event":"page_view","path":"/sw.js","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}
+{"level":30,"time":"2026-02-04T23:00:00.960Z","event":"page_view","path":"/workbox-3e722498.js","userHash":"178eab8dc2e9","os":"Other","browser":"Chrome","type":"Desktop"}

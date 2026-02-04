@@ -28,6 +28,12 @@ type AnalyticsMetrics = {
 	browserStats: { label: string; value: number }[];
 	hourlyTraffic: number[];
 	recentEvents: PinoLogEntry[];
+	systemHealth?: {
+		avgLatency: number;
+		errorRate: number;
+		successRate: number;
+		statusCodes: Record<number, number>;
+	};
 };
 
 // --- UTILS ---
@@ -128,6 +134,42 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 		const bounceRate =
 			totalSessions > 0 ? Math.round((singleEventSessions / totalSessions) * 100) : 0;
 
+		// --- SYSTEM HEALTH (from system.log) ---
+		const systemFile = Bun.file("./system.log");
+		let systemHealth = undefined;
+		if (await systemFile.exists()) {
+			const sysText = await systemFile.text();
+			const sysLines = sysText.trim().split("\n");
+			let totalLat = 0;
+			let errors = 0;
+			let totalRequests = 0;
+			const codes: Record<number, number> = {};
+
+			for (const line of sysLines) {
+				try {
+					const entry = JSON.parse(line);
+					if (entry.duration && entry.status) {
+						const lat = parseInt(entry.duration) || 0;
+						totalLat += lat;
+						totalRequests++;
+						if (entry.status >= 400) errors++;
+						codes[entry.status] = (codes[entry.status] || 0) + 1;
+					}
+				} catch (_) {
+					// Skip malformed lines
+				}
+			}
+
+			if (totalRequests > 0) {
+				systemHealth = {
+					avgLatency: Math.round(totalLat / totalRequests),
+					errorRate: Math.round((errors / totalRequests) * 100),
+					successRate: Math.round(((totalRequests - errors) / totalRequests) * 100),
+					statusCodes: codes,
+				};
+			}
+		}
+
 		return {
 			totalViews: entries.length,
 			uniqueUsers: userSessions.size,
@@ -147,6 +189,7 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 				.slice(0, 3)
 				.map(([label, value]) => ({ label, value })),
 			recentEvents: allEntries.slice(-50).reverse(),
+			systemHealth,
 		};
 	} catch (_e) {
 		return null;
@@ -288,6 +331,46 @@ adminRouter.get("/", async (c) => {
                 </div>
             </div>
         </div>
+
+        ${metrics.systemHealth
+					? html`
+            <!-- System Health Section -->
+            <div class="mb-12">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-xs font-bold text-white uppercase tracking-widest">Infrastructure Intelligence</h3>
+                    <button data-info-title="System Health" data-info-body="Aggregiert Daten aus system.log. Latenz zeigt die durchschnittliche Verarbeitungszeit pro Request. Resilience bewertet die Gesamtstabilität des Servers (2xx/3xx Status Codes)." class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-900 border border-zinc-900 rounded-lg overflow-hidden shadow-sm">
+                    <div class="bg-zinc-950 p-6 flex flex-col group">
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Latency</span>
+                        <div class="text-3xl font-light text-white tracking-tight">${metrics.systemHealth.avgLatency}<span class="text-xs text-zinc-600 ml-1">ms</span></div>
+                        <div class="mt-auto pt-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter flex items-center justify-between">
+                            <span>AVG RESPONSE</span>
+                            <span class="${metrics.systemHealth.avgLatency < 50 ? 'text-emerald-500' : metrics.systemHealth.avgLatency < 200 ? 'text-amber-500' : 'text-rose-500'} font-mono">${metrics.systemHealth.avgLatency < 100 ? 'OPTIMAL' : 'DEGRADED'}</span>
+                        </div>
+                    </div>
+                    <div class="bg-zinc-950 p-6 flex flex-col">
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Resilience</span>
+                        <div class="text-3xl font-light text-white tracking-tight">${metrics.systemHealth.successRate}%</div>
+                        <div class="mt-auto pt-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter flex items-center justify-between">
+                            <span>AVAILABILITY GRADE</span>
+                            <span class="text-zinc-400 font-mono">${metrics.systemHealth.successRate > 99 ? 'L3' : 'L2'}</span>
+                        </div>
+                    </div>
+                    <div class="bg-zinc-950 p-6 flex flex-col">
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Error Rate</span>
+                        <div class="text-3xl font-light ${metrics.systemHealth.errorRate > 5 ? "text-rose-500" : "text-white"} tracking-tight">${metrics.systemHealth.errorRate}%</div>
+                        <div class="mt-auto pt-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter flex items-center justify-between">
+                            <span>NON-2XX RESPONSES</span>
+                            <span class="font-mono text-zinc-400 uppercase">${Object.keys(metrics.systemHealth.statusCodes).length} TYPES</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+					: ""}
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12">
             <!-- Path List -->
