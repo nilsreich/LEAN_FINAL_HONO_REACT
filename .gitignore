@@ -6,7 +6,6 @@ out
 dist
 server-bin
 *.tgz
-src/i18n
 playwright-report
 test-results
 .next
