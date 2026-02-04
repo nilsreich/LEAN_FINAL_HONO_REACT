@@ -1,1 +1,502 @@
+nohup: ignoring input
+167 | 	const pageContent = html`
+                               ^
+error: Unterminated string literal
+    at /workspaces/codespaces-blank/src/server/admin.ts:167:26
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+23 | } else if (isServerConfig(entryNamespace?.default)) {
+24 |    var server = globalThis[hmrSymbol];
+25 |    if (server) {
+26 |       server.reload(entryNamespace.default);
+27 |       console.debug(`Reloaded ${server.development ? 'development ' : ''}server: ${server.protocol}://${server.hostname}:${server.port}`);
+28 |       server = globalThis[hmrSymbol] = Bun.serve(entryNamespace.default);
+     ^
+error: Failed to start server. Is port 3000 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at bun:main:28:49
+      at loadAndEvaluateModule (2:1)
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+137 | }
+      ^
+error: Unexpected }
+    at /workspaces/codespaces-blank/src/server/admin.ts:137:1
+Started development server: http://localhost:3000
+Started development server: http://localhost:3000
 Started development server: http://localhost:3000

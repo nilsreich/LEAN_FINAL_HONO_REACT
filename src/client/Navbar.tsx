@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Home, Languages, LogIn, LogOut, PlusCircle } from "lucide-react";
+import { Languages } from "lucide-react";
 import { useI18nContext } from "../i18n/i18n-react";
 import { authClient } from "../modules/auth/auth.client";
 
 export function Navbar() {
 	const { data: session } = authClient.useSession();
-	const { LL, locale } = useI18nContext();
+	const { locale } = useI18nContext();
 
 	return (
 		<div className="navbar bg-base-100 shadow-sm border-b border-base-200 sticky top-0 z-50">
@@ -54,14 +54,16 @@ export function Navbar() {
 									fill="none"
 									viewBox="0 0 24 24"
 									stroke="currentColor"
+									role="img"
+									aria-label="Cart"
 								>
-									{" "}
+									<title>Cart</title>
 									<path
 										strokeLinecap="round"
 										strokeLinejoin="round"
 										strokeWidth="2"
 										d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-									/>{" "}
+									/>
 								</svg>
 								<span className="badge badge-sm indicator-item">8</span>
 							</div>
@@ -82,7 +84,11 @@ export function Navbar() {
 
 					{session ? (
 						<div className="dropdown dropdown-end">
-							<div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar ring-primary ring-offset-base-100 ring-offset-2 scale-90">
+							<div
+								tabIndex={0}
+								role="button"
+								className="btn btn-ghost btn-circle avatar ring-primary ring-offset-base-100 ring-offset-2 scale-90"
+							>
 								<div className="w-10 rounded-full">
 									{session.user.image ? (
 										<img alt="User Avatar" src={session.user.image} />
@@ -107,7 +113,7 @@ export function Navbar() {
 									<Link to="/create">Profile</Link>
 								</li>
 								<li>
-									<a>Settings</a>
+									<Link to="/">Settings</Link>
 								</li>
 								<li>
 									<button onClick={() => authClient.signOut()} className="text-error">

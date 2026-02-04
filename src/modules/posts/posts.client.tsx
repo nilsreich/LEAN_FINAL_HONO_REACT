@@ -3,9 +3,11 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { api } from "../../core/api.client";
 import { useI18nContext } from "../../i18n/i18n-react";
+import { authClient } from "../auth/auth.client";
 import { createPostSchema } from "./posts.shared";
 
 export function PostList() {
+	const { data: session } = authClient.useSession();
 	const { LL } = useI18nContext();
 	const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
 		queryKey: ["posts"],
@@ -38,9 +40,11 @@ export function PostList() {
 						<p className="py-6 text-lg opacity-80">
 							A minimal place to share your thoughts. Join {total} others sharing their stories.
 						</p>
-						<Link to="/create" className="btn btn-primary btn-lg">
-							{LL.CREATE_POST()}
-						</Link>
+						{session && (
+							<Link to="/create" className="btn btn-primary btn-lg">
+								{LL.CREATE_POST()}
+							</Link>
+						)}
 					</div>
 				</div>
 			</div>
@@ -50,7 +54,7 @@ export function PostList() {
 					<h3 className="text-3xl font-bold">{LL.HOME()}</h3>
 					<div className="stats shadow-sm border border-base-200 bg-base-100">
 						<div className="stat py-2 px-6">
-							<div className="stat-title text-xs uppercase font-bold tracking-widest">{LL.TOTAL_POSTS?.() || "Posts"}</div>
+							<div className="stat-title text-xs uppercase font-bold tracking-widest">Posts</div>
 							<div className="stat-value text-2xl text-primary">{total}</div>
 						</div>
 					</div>
@@ -114,6 +118,7 @@ export function PostList() {
 }
 
 export function CreatePostForm() {
+	const { data: session, isPending } = authClient.useSession();
 	const { LL } = useI18nContext();
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
@@ -143,6 +148,27 @@ export function CreatePostForm() {
 			setError(err.message);
 		},
 	});
+
+	if (isPending) {
+		return (
+			<div className="flex justify-center py-20">
+				<span className="loading loading-spinner loading-lg text-primary"></span>
+			</div>
+		);
+	}
+
+	if (!session) {
+		return (
+			<div className="alert alert-warning shadow-sm rounded-2xl max-w-md mx-auto mt-20">
+				<div className="flex flex-col gap-4">
+					<span>Please login to create a post.</span>
+					<Link to="/login" className="btn btn-primary btn-sm">
+						Go to Login
+					</Link>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="max-w-2xl mx-auto">

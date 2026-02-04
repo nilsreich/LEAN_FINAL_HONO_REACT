@@ -11,6 +11,17 @@ export default defineConfig({
 		tailwindcss(),
 		VitePWA({
 			registerType: "autoUpdate",
+			injectRegister: "auto",
+			workbox: {
+				navigateFallbackDenylist: [/^\/admin/, /^\/api/],
+				runtimeCaching: [
+					{
+						urlPattern: ({ url }) =>
+							url.pathname.startsWith("/api") || url.pathname.startsWith("/admin"),
+						handler: "NetworkOnly",
+					},
+				],
+			},
 			manifest: {
 				name: "Bun Hono Multi-Post",
 				short_name: "PostApp",
@@ -29,18 +40,12 @@ export default defineConfig({
 	],
 	server: {
 		proxy: {
-			"/api": {
-				target: "http://localhost:3000",
-				changeOrigin: true,
-			},
+			"/api": "http://localhost:3000",
 		},
 	},
 	preview: {
 		proxy: {
-			"/api": {
-				target: "http://localhost:3000",
-				changeOrigin: true,
-			},
+			"/api": "http://localhost:3000",
 		},
 	},
 	build: {

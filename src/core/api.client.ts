@@ -9,4 +9,6 @@ export const api = hc<AppType>("/api", {
 			"Accept-Language": lang,
 		};
 	},
+	fetch: (url: string | URL | Request, options?: RequestInit) =>
+		fetch(url, { ...options, credentials: "include" }),
 });

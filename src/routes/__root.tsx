@@ -20,7 +20,7 @@ function RootComponent() {
 	const locale = (lang || "en") as Locales;
 
 	return (
-		<TypesafeI18n locale={locale}>
+		<TypesafeI18n locale={locale} key={locale}>
 			<div className="flex flex-col min-h-screen bg-base-100">
 				<Navbar />
 				<main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
