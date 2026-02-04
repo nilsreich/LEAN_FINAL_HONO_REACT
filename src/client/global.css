@@ -7,14 +7,13 @@
   --color-brand: #7480ff;
 }
 
-:root {
-  --splash-bg: #1d232a; 
-}
-
 body {
-  @apply bg-base-200 min-h-screen text-base-content antialiased;
+  background-color: var(--color-base-200);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .btn, .input, .textarea, .card {
-  @apply transition-all duration-200;
+  transition: all 0.2s ease-in-out;
 }

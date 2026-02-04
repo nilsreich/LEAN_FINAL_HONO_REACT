@@ -21,14 +21,18 @@ function RootComponent() {
 
 	return (
 		<TypesafeI18n locale={locale}>
-			<div className="flex flex-col min-h-screen">
+			<div className="flex flex-col min-h-screen bg-base-100">
 				<Navbar />
-				<main className="flex-grow w-full max-w-2xl mx-auto px-4 py-6">
+				<main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
 					<Outlet />
 				</main>
-				<footer className="footer footer-center p-10 bg-base-200 text-base-content rounded opacity-30">
+				<footer className="footer sm:footer-horizontal footer-center p-10 bg-base-200 text-base-content mt-12">
 					<aside>
-						<p>Copyright © 2026 - All right reserved by PostApp</p>
+						<p className="font-bold">
+							PostApp Ltd. <br />
+							Experimental Coding Project
+						</p>
+						<p>Copyright © 2026 - All right reserved</p>
 					</aside>
 				</footer>
 			</div>
