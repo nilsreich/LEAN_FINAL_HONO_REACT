@@ -42,7 +42,7 @@ const systemLogger = pino(
 );
 
 // Analytics Logger: Event-based logging to separate file (Non-blocking)
-const analyticsLogger = pino(
+export const analyticsLogger = pino(
 	{
 		base: undefined,
 		timestamp: pino.stdTimeFunctions.isoTime,

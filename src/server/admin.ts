@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { basicAuth } from "hono/basic-auth";
 import { html } from "hono/html";
+import { getMonitoringData } from "./monitoring";
 
 // --- TYPES ---
 
@@ -22,10 +23,12 @@ type AnalyticsMetrics = {
 	engagementScore: number;
 	bounceRate: number;
 	activeNow: number;
+	peakUsers: { count: number; time: string };
+	sessionDurationDist: { short: number; medium: number; long: number };
 	topPaths: { path: string; count: number; isApi: boolean }[];
-	deviceStats: { label: string; value: number }[];
-	osStats: { label: string; value: number }[];
-	browserStats: { label: string; value: number }[];
+	deviceStats: { label: string; value: number; percent: number }[];
+	osStats: { label: string; value: number; percent: number }[];
+	browserStats: { label: string; value: number; percent: number }[];
 	hourlyTraffic: number[];
 	recentEvents: PinoLogEntry[];
 	systemHealth?: {
@@ -33,6 +36,7 @@ type AnalyticsMetrics = {
 		errorRate: number;
 		successRate: number;
 		statusCodes: Record<number, number>;
+		slowestPaths: { path: string; avg: number }[];
 	};
 };
 
@@ -46,7 +50,10 @@ const NOISE_PATHS = [
 	/^\/assets\//,
 	/registerSW/,
 ];
-const isTechNoise = (path: string) => NOISE_PATHS.some((re) => re.test(path));
+const isTechNoise = (path?: string) => {
+	if (!path) return false;
+	return NOISE_PATHS.some((re) => re.test(path));
+};
 
 // --- DATA PROCESSING ---
 
@@ -67,8 +74,11 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 			})
 			.filter((e): e is PinoLogEntry => e !== null);
 
+		// Exclude system stats from user analytics
+		const userEntries = allEntries.filter((e) => e.event !== "system_stats");
+
 		// Filter noise for core metrics
-		const entries = hideNoise ? allEntries.filter((e) => !isTechNoise(e.path)) : allEntries;
+		const entries = hideNoise ? userEntries.filter((e) => !isTechNoise(e.path)) : userEntries;
 
 		const userSessions = new Map<string, PinoLogEntry[]>();
 		const hourly = new Array(24).fill(0);
@@ -79,6 +89,7 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 
 		const fiveMinsAgo = Date.now() - 5 * 60 * 1000;
 		const activeUsersTemp = new Set<string>();
+		const hourlyUsers: Record<number, Set<string>> = {};
 
 		for (const entry of entries) {
 			const list = userSessions.get(entry.userHash) || [];
@@ -89,6 +100,10 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 			const hour = new Date(time).getHours();
 			hourly[hour]++;
 
+			// Track unique users per hour for peak detection
+			hourlyUsers[hour] = hourlyUsers[hour] || new Set();
+			hourlyUsers[hour].add(entry.userHash);
+
 			if (time > fiveMinsAgo) activeUsersTemp.add(entry.userHash);
 
 			paths[entry.path] = (paths[entry.path] || 0) + 1;
@@ -97,9 +112,19 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 			deviceMap[entry.type] = (deviceMap[entry.type] || 0) + 1;
 		}
 
+		let peakHour = 0;
+		let peakCount = 0;
+		for (const [hour, users] of Object.entries(hourlyUsers)) {
+			if (users.size > peakCount) {
+				peakCount = users.size;
+				peakHour = Number.parseInt(hour, 10);
+			}
+		}
+
 		let totalSessionSeconds = 0;
 		let totalSessions = 0;
 		let singleEventSessions = 0;
+		const sessionDurations: number[] = [];
 
 		for (const [_hash, userEntries] of userSessions) {
 			const sorted = userEntries.sort(
@@ -115,7 +140,10 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 				const current = new Date(sorted[i]!.time).getTime();
 				if (current - lastEvent > 30 * 60 * 1000) {
 					if (currentSessionEvents === 1) singleEventSessions++;
-					totalSessionSeconds += (lastEvent - sessionStart) / 1000;
+					const duration = (lastEvent - sessionStart) / 1000;
+					totalSessionSeconds += duration;
+					sessionDurations.push(duration);
+					
 					sessionStart = current;
 					totalSessions++;
 					currentSessionEvents = 1;
@@ -125,8 +153,17 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 				lastEvent = current;
 			}
 			if (currentSessionEvents === 1) singleEventSessions++;
-			totalSessionSeconds += (lastEvent - sessionStart) / 1000;
+			const finalDuration = (lastEvent - sessionStart) / 1000;
+			totalSessionSeconds += finalDuration;
+			sessionDurations.push(finalDuration);
 		}
+
+		const distribution = {
+			short: sessionDurations.filter((d) => d < 60).length, // < 1m
+			medium: sessionDurations.filter((d) => d >= 60 && d < 600).length, // 1m - 10m
+			long: sessionDurations.filter((d) => d >= 600).length, // > 10m
+		};
+		const totalDist = distribution.short + distribution.medium + distribution.long || 1;
 
 		const avgSec = totalSessions > 0 ? totalSessionSeconds / totalSessions : 0;
 		const engagementScore =
@@ -136,7 +173,7 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 
 		// --- SYSTEM HEALTH (from system.log) ---
 		const systemFile = Bun.file("./system.log");
-		let systemHealth = undefined;
+		let systemHealth: AnalyticsMetrics["systemHealth"];
 		if (await systemFile.exists()) {
 			const sysText = await systemFile.text();
 			const sysLines = sysText.trim().split("\n");
@@ -144,16 +181,22 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 			let errors = 0;
 			let totalRequests = 0;
 			const codes: Record<number, number> = {};
+			const pathLatencies: Record<string, { total: number; count: number }> = {};
 
 			for (const line of sysLines) {
 				try {
 					const entry = JSON.parse(line);
 					if (entry.duration && entry.status) {
-						const lat = parseInt(entry.duration) || 0;
+						const lat = Number.parseInt(entry.duration, 10) || 0;
 						totalLat += lat;
 						totalRequests++;
 						if (entry.status >= 400) errors++;
 						codes[entry.status] = (codes[entry.status] || 0) + 1;
+
+						pathLatencies[entry.path] = pathLatencies[entry.path] || { total: 0, count: 0 };
+						const stats = pathLatencies[entry.path]!;
+						stats.total += lat;
+						stats.count++;
 					}
 				} catch (_) {
 					// Skip malformed lines
@@ -166,6 +209,11 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 					errorRate: Math.round((errors / totalRequests) * 100),
 					successRate: Math.round(((totalRequests - errors) / totalRequests) * 100),
 					statusCodes: codes,
+					slowestPaths: Object.entries(pathLatencies)
+						.map(([path, data]) => ({ path, avg: Math.round(data.total / data.count) }))
+						.sort((a, b) => b.avg - a.avg)
+						.filter((p) => !isTechNoise(p.path))
+						.slice(0, 3),
 				};
 			}
 		}
@@ -177,18 +225,39 @@ async function getAdvancedAnalytics(hideNoise = true): Promise<AnalyticsMetrics 
 			engagementScore,
 			bounceRate,
 			activeNow: activeUsersTemp.size,
+			peakUsers: { count: peakCount, time: `${peakHour}:00 - ${peakHour}:59` },
+			sessionDurationDist: {
+				short: Math.round((distribution.short / totalDist) * 100),
+				medium: Math.round((distribution.medium / totalDist) * 100),
+				long: Math.round((distribution.long / totalDist) * 100),
+			},
 			hourlyTraffic: hourly,
 			topPaths: Object.entries(paths)
 				.sort((a, b) => b[1] - a[1])
 				.slice(0, 5)
 				.map(([path, count]) => ({ path, count, isApi: path.startsWith("/api") })),
-			deviceStats: Object.entries(deviceMap).map(([label, value]) => ({ label, value })),
-			osStats: Object.entries(osMap).map(([label, value]) => ({ label, value })),
+			deviceStats: Object.entries(deviceMap).map(([label, value]) => ({
+				label,
+				value,
+				percent: Math.round((value / entries.length) * 100),
+			})),
+			osStats: Object.entries(osMap).map(([label, value]) => ({
+				label,
+				value,
+				percent: Math.round((value / entries.length) * 100),
+			})),
 			browserStats: Object.entries(browsers)
 				.sort((a, b) => b[1] - a[1])
 				.slice(0, 3)
-				.map(([label, value]) => ({ label, value })),
-			recentEvents: allEntries.slice(-50).reverse(),
+				.map(([label, value]) => ({
+					label,
+					value,
+					percent: Math.round((value / entries.length) * 100),
+				})),
+			recentEvents: userEntries
+				.filter((e) => e.userHash) // Defensive against any entries without hash
+				.slice(-50)
+				.reverse(),
 			systemHealth,
 		};
 	} catch (_e) {
@@ -210,9 +279,24 @@ adminRouter.use(
 
 adminRouter.get("/", async (c) => {
 	const filter = c.req.query("filter") || "real";
-	const metrics = await getAdvancedAnalytics(filter === "real");
+	const [metrics, monitoringData] = await Promise.all([
+		getAdvancedAnalytics(filter === "real"),
+		getMonitoringData(),
+	]);
 
 	if (!metrics) return c.html(html`<h1>No logs found. Visit the app first!</h1>`);
+
+	const ramPercent = monitoringData.latest?.ramUsage?.percent || 0;
+	const ramColorClass =
+		ramPercent < 70 ? "bg-green-500" : ramPercent < 85 ? "bg-yellow-500" : "bg-red-500";
+	const cpuWarning = (monitoringData.latest?.cpuLoad || 0) > 1.0;
+
+	const formatBytes = (bytes: number) => {
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+		return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`;
+	};
 
 	return c.html(html`
 <!DOCTYPE html>
@@ -259,12 +343,94 @@ adminRouter.get("/", async (c) => {
             </div>
         </header>
 
+        <!-- Server Health -->
+        <section class="mb-12">
+            <div class="flex items-center gap-3 mb-6">
+                <h2 class="text-[11px] font-bold text-white uppercase tracking-[0.3em]">Server Health</h2>
+                <div class="h-px flex-1 bg-zinc-900/50"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- RAM Usage -->
+                <div class="bg-zinc-950 border border-zinc-900 p-5 rounded-lg group hover:border-zinc-800 transition-colors">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                             <i data-lucide="cpu" class="w-3 h-3 text-zinc-600"></i>
+                             <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">RAM Usage</span>
+                        </div>
+                        <button data-info-title="RAM-Details" data-info-body="Aktuelle Auslastung: ${ramPercent}%. <br/>Durchschnitt (1h): ${monitoringData.averages1h.ram.toFixed(1)}%. <br/><br/>Ein hoher RAM-Verbrauch führt zu vermehrtem Paging (Swapping) auf die Festplatte, was die Performance massiv drosselt. Bei Werten dauerhaft über 85% sollte ein Upgrade des VPS in Erwägung gezogen werden." class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-end mb-2">
+                        <span class="text-[10px] font-mono text-zinc-300">${monitoringData.latest?.ramUsage?.usedMB || 0} / ${monitoringData.latest?.ramUsage?.totalMB || 0} MB</span>
+                        <span class="text-[9px] font-mono text-zinc-600">AVG (1h): ${monitoringData.averages1h.ram.toFixed(1)}%</span>
+                    </div>
+                    <div class="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full ${ramColorClass} transition-all duration-1000" style="width: ${ramPercent}%"></div>
+                    </div>
+                    <p class="text-[9px] text-zinc-600 mt-3 italic leading-relaxed">Physische Speicherauslastung des VPS. <br/> <span class="opacity-50">Grün (<70%), Gelb (70-85%), Rot (>85%)</span></p>
+                </div>
+
+                <!-- CPU Load -->
+                <div class="bg-zinc-950 border border-zinc-900 p-5 rounded-lg group hover:border-zinc-800 transition-colors">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                             <i data-lucide="activity" class="w-3 h-3 text-zinc-600"></i>
+                             <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">CPU Load (1m)</span>
+                        </div>
+                        <button data-info-title="CPU-Metriken" data-info-body="Aktueller Load (1m): ${monitoringData.latest?.cpuLoad?.toFixed(2) || "0.00"}. <br/>Durchschnitt (1h): ${monitoringData.averages1h.cpu.toFixed(2)}. <br/><br/>Load: >1.0 bedeutet Warteschlangen bei der CPU-Verarbeitung (bei 1 Kern). Wenn der 1h-Durchschnitt dauerhaft über 1.0 liegt, ist das System überlastet." class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-mono ${cpuWarning ? "text-red-500 font-bold" : "text-zinc-300"}">${monitoringData.latest?.cpuLoad?.toFixed(2) || "0.00"}</span>
+                        <span class="text-[9px] font-mono text-zinc-600">AVG (1h): ${monitoringData.averages1h.cpu.toFixed(2)}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${cpuWarning ? html`<div class="flex items-center gap-1.5 text-[9px] text-red-500 font-bold uppercase tracking-tighter">
+                            <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            </span>
+                            High Load Warning
+                        </div>` : html`<div class="text-[9px] text-emerald-500/80 font-bold uppercase tracking-tighter">System Healthy</div>`}
+                    </div>
+                    <p class="text-[9px] text-zinc-600 mt-3 italic leading-relaxed">Durchschnittliche CPU-Last der letzten Minute. <br/> <span class="opacity-50">Last > 1.0 bedeutet Warteschlangen bei der CPU.</span></p>
+                </div>
+
+                <!-- Network Traffic -->
+                <div class="bg-zinc-950 border border-zinc-900 p-5 rounded-lg group hover:border-zinc-800 transition-colors">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                             <i data-lucide="zap" class="w-3 h-3 text-zinc-600"></i>
+                             <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Traffic (24h)</span>
+                        </div>
+                        <button data-info-title="Netzwerk-Traffic" data-info-body="Inbound (Download): ${formatBytes(monitoringData.traffic24h.in)} <br/>Outbound (Upload): ${formatBytes(monitoringData.traffic24h.out)} <br/><br/>Dies ist der kumulierte Wert der letzten 24 Stunden. Nützlich zur Überwachung des Inklusiv-Traffics Ihres VPS-Anbieters." class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
+                            <i data-lucide="info" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                    <div class="flex gap-6">
+                        <div class="flex flex-col">
+                            <span class="text-[8px] text-zinc-600 uppercase font-black tracking-tighter mb-1">Incoming</span>
+                            <span class="text-[13px] font-mono text-zinc-300">${formatBytes(monitoringData.traffic24h.in)}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[8px] text-zinc-600 uppercase font-black tracking-tighter mb-1">Outgoing</span>
+                            <span class="text-[13px] font-mono text-zinc-300">${formatBytes(monitoringData.traffic24h.out)}</span>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-zinc-600 mt-3 italic leading-relaxed">Kumulierter Netzwerkverkehr der letzten 24 Stunden. <br/> <span class="opacity-50">Erfasst über alle aktiven Netzwerk-Interfaces.</span></p>
+                </div>
+            </div>
+        </section>
+
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-px bg-zinc-900 border border-zinc-900 rounded-lg overflow-hidden mb-12">
             <div class="bg-zinc-950 p-6 relative flex flex-col group">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Growth</span>
-                    <button data-info-title="Besucher-Metriken" data-info-body="Unique Users zählt die eindeutigen Identitäten pro Tag. Active Now zeigt Nutzer, die in den letzten 5 Minuten aktiv waren. Dies ist der wichtigste Indikator für aktuelle Relevanz." class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
+                    <button data-info-title="Besucher-Metriken" data-info-body="Unique Users zählt die eindeutigen Identitäten pro Tag. <br/><br/><b>Peak Activity:</b> <br/>Am meisten war los um <b>${metrics.peakUsers.time}</b> mit <b>${metrics.peakUsers.count}</b> gleichzeitigen Nutzern." class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
                         <i data-lucide="info" class="w-3 h-3"></i>
                     </button>
                 </div>
@@ -277,7 +443,7 @@ adminRouter.get("/", async (c) => {
             <div class="bg-zinc-950 p-6 relative flex flex-col">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Retention</span>
-                    <button data-info-title="Sitzungs-Qualität" data-info-body="Die durchschnittliche Verweildauer gibt an, wie lange ein Nutzer pro Session aktiv ist. Ein hoher Wert zeigt, dass die Inhalte fesselnd sind." class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
+                    <button data-info-title="Sitzungs-Qualität" data-info-body="Die durchschnittliche Verweildauer gibt an, wie lange ein Nutzer pro Session aktiv ist. <br/><br/><b>Verteilung:</b><br/>Short (&lt;1m): ${metrics.sessionDurationDist.short}%<br/>Medium (1-10m): ${metrics.sessionDurationDist.medium}%<br/>Long (&gt;10m): ${metrics.sessionDurationDist.long}%" class="info-btn text-zinc-800 hover:text-zinc-400 transition-colors">
                         <i data-lucide="info" class="w-3 h-3"></i>
                     </button>
                 </div>
@@ -332,8 +498,9 @@ adminRouter.get("/", async (c) => {
             </div>
         </div>
 
-        ${metrics.systemHealth
-					? html`
+        ${
+					metrics.systemHealth
+						? html`
             <!-- System Health Section -->
             <div class="mb-12">
                 <div class="flex justify-between items-center mb-8">
@@ -348,7 +515,7 @@ adminRouter.get("/", async (c) => {
                         <div class="text-3xl font-light text-white tracking-tight">${metrics.systemHealth.avgLatency}<span class="text-xs text-zinc-600 ml-1">ms</span></div>
                         <div class="mt-auto pt-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter flex items-center justify-between">
                             <span>AVG RESPONSE</span>
-                            <span class="${metrics.systemHealth.avgLatency < 50 ? 'text-emerald-500' : metrics.systemHealth.avgLatency < 200 ? 'text-amber-500' : 'text-rose-500'} font-mono">${metrics.systemHealth.avgLatency < 100 ? 'OPTIMAL' : 'DEGRADED'}</span>
+                            <span class="${metrics.systemHealth.avgLatency < 50 ? "text-emerald-500" : metrics.systemHealth.avgLatency < 200 ? "text-amber-500" : "text-rose-500"} font-mono">${metrics.systemHealth.avgLatency < 100 ? "OPTIMAL" : "DEGRADED"}</span>
                         </div>
                     </div>
                     <div class="bg-zinc-950 p-6 flex flex-col">
@@ -356,7 +523,7 @@ adminRouter.get("/", async (c) => {
                         <div class="text-3xl font-light text-white tracking-tight">${metrics.systemHealth.successRate}%</div>
                         <div class="mt-auto pt-4 text-[9px] font-bold text-zinc-600 uppercase tracking-tighter flex items-center justify-between">
                             <span>AVAILABILITY GRADE</span>
-                            <span class="text-zinc-400 font-mono">${metrics.systemHealth.successRate > 99 ? 'L3' : 'L2'}</span>
+                            <span class="text-zinc-400 font-mono">${metrics.systemHealth.successRate > 99 ? "L3" : "L2"}</span>
                         </div>
                     </div>
                     <div class="bg-zinc-950 p-6 flex flex-col">
@@ -370,7 +537,8 @@ adminRouter.get("/", async (c) => {
                 </div>
             </div>
             `
-					: ""}
+						: ""
+				}
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12">
             <!-- Path List -->
@@ -415,7 +583,7 @@ adminRouter.get("/", async (c) => {
 													(s) => html`
                             <div class="flex items-center justify-between text-[11px]">
                                 <span class="text-zinc-400 font-medium">${s.label}</span>
-                                <span class="text-zinc-600 font-mono">${s.value}</span>
+                                <span class="text-zinc-600 font-mono">${s.percent}%</span>
                             </div>
                         `,
 												)}
@@ -427,7 +595,7 @@ adminRouter.get("/", async (c) => {
 													(s) => html`
                             <div class="flex items-center justify-between text-[11px]">
                                 <span class="text-zinc-400 font-medium">${s.label}</span>
-                                <span class="text-zinc-600 font-mono">${s.value}</span>
+                                <span class="text-zinc-600 font-mono">${s.percent}%</span>
                             </div>
                         `,
 												)}
@@ -439,7 +607,7 @@ adminRouter.get("/", async (c) => {
 													(s) => html`
                             <div class="flex items-center justify-between text-[11px]">
                                 <span class="text-zinc-400 font-medium">${s.label}</span>
-                                <span class="text-zinc-600 font-mono">${s.value}</span>
+                                <span class="text-zinc-600 font-mono">${s.percent}%</span>
                             </div>
                         `,
 												)}
@@ -472,14 +640,14 @@ adminRouter.get("/", async (c) => {
                     </thead>
                     <tbody class="divide-y divide-zinc-900">
                         ${metrics.recentEvents.map((e) => {
-													const noise = isTechNoise(e.path);
+													const noise = isTechNoise(e.path || "");
 													return html`
                             <tr class="hover:bg-zinc-900/50 group transition-colors ${noise ? "opacity-30" : ""}">
                                 <td class="p-5 pl-8 font-mono text-zinc-500">${new Date(e.time).toLocaleTimeString()}</td>
-                                <td class="p-5"><span class="text-zinc-500 font-mono text-[9px]">${e.userHash.substring(0, 12)}...</span></td>
+                                <td class="p-5"><span class="text-zinc-500 font-mono text-[9px]">${(e.userHash || "Unknown").substring(0, 12)}...</span></td>
                                 <td class="p-5"><span class="px-2 py-0.5 rounded-sm border border-zinc-800 text-zinc-300 text-[9px] font-bold">${e.event}</span></td>
-                                <td class="p-5 font-mono ${e.path.startsWith("/api") ? "text-zinc-500" : "text-zinc-300"}">${e.path}</td>
-                                <td class="p-5 pr-8 text-right text-zinc-500 font-bold uppercase text-[9px] tracking-widest">${e.os}</td>
+                                <td class="p-5 font-mono ${(e.path || "").startsWith("/api") ? "text-zinc-500" : "text-zinc-300"}">${e.path || "N/A"}</td>
+                                <td class="p-5 pr-8 text-right text-zinc-500 font-bold uppercase text-[9px] tracking-widest">${e.os || "SYSTEM"}</td>
                             </tr>
                         `;
 												})}

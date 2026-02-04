@@ -12,6 +12,7 @@ import { loadAllLocales } from "../i18n/i18n-util.sync";
 import { type AuthVariables, authHandler } from "../modules/auth/auth.server";
 import { postsRouter } from "../modules/posts/posts.server";
 import { adminRouter } from "./admin";
+import { startMonitoring } from "./monitoring";
 
 type Variables = AuthVariables & {
 	LL: TranslationFunctions;
@@ -19,6 +20,9 @@ type Variables = AuthVariables & {
 
 // Load all locales once at startup
 loadAllLocales();
+
+// Start background system monitoring
+startMonitoring();
 
 /**
  * HONO SERVER CONFIGURATION
