@@ -26,23 +26,14 @@ const parseUA = (ua: string | undefined) => {
 
 const isProduction = process.env.NODE_ENV === "production";
 
-// System Logger
-const systemLogger = pino(
-    {
-        level: isProduction ? "info" : "debug",
-        base: undefined,
-        timestamp: pino.stdTimeFunctions.isoTime,
-    },
-    // Only use the transport if NOT in production
-    !isProduction 
-        ? pino.transport({
-                target: "pino-pretty",
-                options: { colorize: true },
-            })
-        : pino.destination(1) // Standard stdout for production
-);
+// System Logger: Log directly to stdout (best for systemd/journalctl)
+const systemLogger = pino({
+	level: isProduction ? "info" : "debug",
+	base: undefined,
+	timestamp: pino.stdTimeFunctions.isoTime,
+});
 
-// Analytics Logger: In production, also log to stdout for simplified VPS monitoring
+// Analytics Logger: Log to stdout in production, or file in dev
 export const analyticsLogger = pino(
 	{
 		base: undefined,
@@ -52,7 +43,7 @@ export const analyticsLogger = pino(
 		? pino.destination(1)
 		: pino.destination({
 				dest: "./analytics.log",
-				minLength: 0, // Write immediately for real-time analytics
+				minLength: 0,
 				sync: true,
 			}),
 );
