@@ -27,10 +27,38 @@ async function getNetworkStats() {
 			tx += Number.parseInt(parts[9] || "0", 10);
 		}
 		return { rx, tx };
-	} catch (e) {
+	} catch (_e) {
 		// Fallback for non-linux environments or errors
 		return { rx: 0, tx: 0 };
 	}
+}
+
+async function getMemoryStats() {
+	try {
+		const content = await Bun.file("/proc/meminfo").text();
+		const meminfo: Record<string, number> = {};
+		for (const line of content.split("\n")) {
+			const parts = line.split(":");
+			if (parts.length === 2) {
+				const name = parts[0]!.trim();
+				const value = Number.parseInt(parts[1]!.trim().split(/\s+/)[0] || "0", 10);
+				meminfo[name] = value * 1024; // kB to bytes
+			}
+		}
+
+		if (meminfo.MemTotal && meminfo.MemAvailable) {
+			return {
+				total: meminfo.MemTotal,
+				free: meminfo.MemAvailable, // Use Available as "free" for more accurate user-facing metrics
+				used: meminfo.MemTotal - meminfo.MemAvailable,
+			};
+		}
+	} catch (_e) {
+		// Fallback for non-Linux or errors
+	}
+	const total = os.totalmem();
+	const free = os.freemem();
+	return { total, free, used: total - free };
 }
 
 export async function startMonitoring() {
@@ -38,9 +66,9 @@ export async function startMonitoring() {
 	lastNetworkStats = await getNetworkStats();
 
 	setInterval(async () => {
-		const totalMem = os.totalmem();
-		const freeMem = os.freemem();
-		const usedMem = totalMem - freeMem;
+		const mem = await getMemoryStats();
+		const totalMem = mem.total;
+		const usedMem = mem.used;
 		const ramPercent = (usedMem / totalMem) * 100;
 
 		const currentNetworkStats = await getNetworkStats();
@@ -122,7 +150,7 @@ export async function getMonitoringData() {
 					count1h++;
 				}
 			}
-		} catch (e) {
+		} catch (_e) {
 			// Skip malformed lines
 		}
 	}
