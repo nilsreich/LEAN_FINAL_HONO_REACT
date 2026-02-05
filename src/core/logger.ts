@@ -26,32 +26,36 @@ const parseUA = (ua: string | undefined) => {
 
 // --- PINO CONFIGURATION ---
 
-// System Logger: Local pretty printing, Production JSON to file
+const isProduction = process.env.NODE_ENV === "production";
+
+// System Logger: In production, log to stdout (caught by systemd/journalctl)
 const systemLogger = pino(
 	{
-		level: process.env.NODE_ENV === "production" ? "info" : "debug",
+		level: isProduction ? "info" : "debug",
 		base: undefined, // Removes pid and hostname
 		timestamp: pino.stdTimeFunctions.isoTime,
 	},
-	process.env.NODE_ENV === "production"
-		? pino.destination({ dest: "./system.log", sync: false })
+	isProduction
+		? pino.destination(1)
 		: pino.transport({
 				target: "pino-pretty",
 				options: { colorize: true },
 			}),
 );
 
-// Analytics Logger: Event-based logging to separate file (Non-blocking)
+// Analytics Logger: In production, also log to stdout for simplified VPS monitoring
 export const analyticsLogger = pino(
 	{
 		base: undefined,
 		timestamp: pino.stdTimeFunctions.isoTime,
 	},
-	pino.destination({
-		dest: "./analytics.log",
-		minLength: 0, // Write immediately for real-time analytics
-		sync: true,
-	}),
+	isProduction
+		? pino.destination(1)
+		: pino.destination({
+				dest: "./analytics.log",
+				minLength: 0, // Write immediately for real-time analytics
+				sync: true,
+			}),
 );
 
 // --- HELPERS ---
