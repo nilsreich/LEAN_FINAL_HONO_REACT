@@ -1,0 +1,70 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: SSH Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            # --- 1. Vorbereitung ---
+            cd /var/www/projekt3 || exit
+            
+            # Reset, um Konflikte zu vermeiden und sauberen Stand zu haben
+            git fetch --all
+            git reset --hard origin/main
+            
+            # --- 2. Build-Prozess ---
+            bun install
+            
+            # Frontend bauen (Vite generiert standardmäßig den 'dist' Ordner)
+            bun run build
+            
+            # Backend Binary direkt auf dem VPS kompilieren
+            bun build ./src/index.ts --compile --outfile server-bin
+            
+            # --- 3. Selektives Aufräumen (Cleanup) ---
+            # Wir schützen:
+            # - server-bin (Die ausführbare Datei)
+            # - *.db* (Die Hauptdatenbank + -shm und -wal Dateien)
+            # - *.log (Deine Logdateien: analytics.log, server.log)
+            # - dist (Der fertige Frontend-Build von Vite)
+            # - .env (Deine Geheimnisse)
+            # - .git (Für den nächsten Pull)
+            
+            find . -maxdepth 1 ! -name '.' ! -name '..' \
+              ! -name 'server-bin' \
+              ! -name '*.db*' \
+              ! -name '*.log' \
+              ! -name '.env' \
+              ! -name '.git' \
+              ! -name 'dist' \
+              ! -name 'public' \
+              -exec rm -rf {} +
+
+            # --- 4. Neustart & Port-Management ---
+            # Port 3000 freigeben (EADDRINUSE verhindern)
+            fuser -k 3000/tcp || true
+            
+            # Systemd neu laden und Service starten
+            sudo systemctl daemon-reload
+            sudo systemctl restart projekt3
+            
+            # --- 5. Abschluss-Check ---
+            echo "--- Deployment erfolgreich. Verbliebene Dateien: ---"
+            ls -F
+            echo "--- Service Status: ---"
+            sudo systemctl status projekt3 --no-pager
