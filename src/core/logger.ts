@@ -24,23 +24,22 @@ const parseUA = (ua: string | undefined) => {
 	return { os, browser, type };
 };
 
-// --- PINO CONFIGURATION ---
-
 const isProduction = process.env.NODE_ENV === "production";
 
-// System Logger: In production, log to stdout (caught by systemd/journalctl)
+// System Logger
 const systemLogger = pino(
-	{
-		level: isProduction ? "info" : "debug",
-		base: undefined, // Removes pid and hostname
-		timestamp: pino.stdTimeFunctions.isoTime,
-	},
-	isProduction
-		? pino.destination(1)
-		: pino.transport({
-				target: "pino-pretty",
-				options: { colorize: true },
-			}),
+    {
+        level: isProduction ? "info" : "debug",
+        base: undefined,
+        timestamp: pino.stdTimeFunctions.isoTime,
+    },
+    // Only use the transport if NOT in production
+    !isProduction 
+        ? pino.transport({
+                target: "pino-pretty",
+                options: { colorize: true },
+            })
+        : pino.destination(1) // Standard stdout for production
 );
 
 // Analytics Logger: In production, also log to stdout for simplified VPS monitoring
